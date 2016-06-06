@@ -205,20 +205,7 @@ public class DepartureModel {
         departureEntries.clear();
         departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
     }
-
-
-    /**
-     * Ändert den Status des selektierten Eintrages auf rot weil Mutation gemacht wurde.
-     */
-    // TODO: Methode löschen?
-    /*
-    public void selectedDepartureEntryWasChanged(){
-        DepartureEntry tmp = getSelectedDeparture();
-        tmp.setIconColLED("Nicht gespeichert");
-        setSelectedDeparture(tmp);
-    }
-    */
-
+    
     /**
      * Validiert die Abfahrtszeit.
      * @param departureTime Abfahrtszeit welche in XX:YY Format sein sollte.
