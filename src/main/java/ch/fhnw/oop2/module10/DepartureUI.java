@@ -261,6 +261,9 @@ public class DepartureUI extends BorderPane {
 
         /* topPane Bindings */
         saveButton.disableProperty().bind(departurePM.contentNotSaveableProperty());
+        removeSelected.disableProperty().bind(departurePM.contentNotSaveableProperty());
+        addNew.disableProperty().bind(departurePM.contentNotSaveableProperty());
+
         undo.disableProperty().bind(departurePM.undoDisabledProperty());
         redo.disableProperty().bind(departurePM.redoDisabledProperty());
 
