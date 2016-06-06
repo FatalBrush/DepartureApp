@@ -194,6 +194,8 @@ public class DepartureModel {
     public void removeDeparture() {
         departureEntries.remove(getSelectedDeparture());
         setTotalAmountOfEntries(String.valueOf(departureEntries.size()));
+        undoStack.clear();
+        redoStack.clear();
     }
 
     /**
