@@ -304,6 +304,30 @@ public class DepartureModelTest {
 
     }
 
+    /**
+     * Testet ob mehrfache Redos korrekt ausgeführt werden
+     */
+    @Test
+    public void testMultipleRedo(){
+        // given
+        departureModel.getDepartureEntries().clear();
+        DepartureEntry dp1 = departureModel.getNewDepartureEntry();
+        departureModel.getDepartureEntries().add(dp1);
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        departureModel.getSelectedDeparture().setTime24hFormat("04:20");
+        departureModel.getSelectedDeparture().setTime24hFormat("04:21");
+        departureModel.getSelectedDeparture().setTime24hFormat("04:22");
+
+        // when
+        departureModel.undo();
+        departureModel.undo();
+        departureModel.redo();
+        departureModel.redo();
+
+        // then
+        assertEquals("04:22", departureModel.getSelectedDeparture().getTime24hFormat());
+    }
+
     @After
     public void cleanUp(){
         departureModel.getDepartureEntries().clear();
