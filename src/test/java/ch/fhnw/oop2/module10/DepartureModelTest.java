@@ -9,6 +9,7 @@ import static junit.framework.Assert.*;
  */
 public class DepartureModelTest {
     private DepartureModel departureModel;
+
     @Before
     public void setUp(){
         departureModel = new DepartureModel();
@@ -280,8 +281,31 @@ public class DepartureModelTest {
         // Alle Einträge sind 11 in der Anzahl
     }
 
+    /**
+     * Testet ob mehrfache Undos korrekt ausgeführt werden
+     */
+    @Test
+    public void testMultipleUndo(){
+        // given
+        departureModel.getDepartureEntries().clear();
+        DepartureEntry dp1 = departureModel.getNewDepartureEntry();
+        departureModel.getDepartureEntries().add(dp1);
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        departureModel.getSelectedDeparture().setTime24hFormat("04:20");
+        departureModel.getSelectedDeparture().setTime24hFormat("04:21");
+        departureModel.getSelectedDeparture().setTime24hFormat("04:22");
+
+        // when
+        departureModel.undo();
+        departureModel.undo();
+
+        // then
+        assertEquals("04:20", departureModel.getSelectedDeparture().getTime24hFormat());
+
+    }
+
     @After
     public void cleanUp(){
-
+        departureModel.getDepartureEntries().clear();
     }
 }
