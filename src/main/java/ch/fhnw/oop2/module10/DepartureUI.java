@@ -178,6 +178,8 @@ public class DepartureUI extends BorderPane {
             leftTableView.scrollTo(leftTableView.getItems().get(0));
             departurePM.setSelectedDeparture(leftTableView.getItems().get(0));
         });
+        undo.setOnAction(event -> departurePM.undo());
+        redo.setOnAction(event -> departurePM.redo());
     }
 
     private void addValueChangeListeners(){
@@ -259,6 +261,8 @@ public class DepartureUI extends BorderPane {
 
         /* topPane Bindings */
         saveButton.disableProperty().bind(departurePM.contentNotSaveableProperty());
+        undo.disableProperty().bind(departurePM.undoDisabledProperty());
+        redo.disableProperty().bind(departurePM.redoDisabledProperty());
 
         /* leftVBox Bindings */
         leftTableView.disableProperty().bind(departurePM.contentNotSaveableProperty());
