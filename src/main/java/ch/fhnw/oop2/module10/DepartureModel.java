@@ -475,7 +475,7 @@ public class DepartureModel {
         undoStack.remove(0);
         redoStack.add(0, cmd);
 
-        cmd.redo();
+        cmd.undo();
     }
 
     /**
