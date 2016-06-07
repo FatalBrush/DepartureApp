@@ -287,21 +287,35 @@ public class DepartureModelTest {
     @Test
     public void testMultipleUndo(){
         // given
-        departureModel.getDepartureEntries().clear();
-        DepartureEntry dp1 = departureModel.getNewDepartureEntry();
-        departureModel.getDepartureEntries().add(dp1);
         departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
-        departureModel.getSelectedDeparture().setTime24hFormat("04:20");
-        departureModel.getSelectedDeparture().setTime24hFormat("04:21");
-        departureModel.getSelectedDeparture().setTime24hFormat("04:22");
+        // Initial hat dieser 00:00
+        departureModel.getSelectedDeparture().setTime24hFormat("00:15");
+        departureModel.getSelectedDeparture().setTime24hFormat("00:30");
 
         // when
         departureModel.undo();
         departureModel.undo();
 
         // then
-        assertEquals("04:20", departureModel.getSelectedDeparture().getTime24hFormat());
+        assertEquals("00:00", departureModel.getSelectedDeparture().getTime24hFormat());
 
+    }
+
+    /**
+     * Testet ob ein einfaches Undo korrekt ausgeführt wird
+     */
+    @Test
+    public void testSingleUndo(){
+        // given
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        // Initial hat dieser IC 747
+        departureModel.getSelectedDeparture().setTrainNumber("IC 7474");
+
+        // when
+        departureModel.undo();
+
+        // then
+        assertEquals("IC 747", departureModel.getSelectedDeparture().getTrainNumber());
     }
 
     /**
@@ -310,13 +324,10 @@ public class DepartureModelTest {
     @Test
     public void testMultipleRedo(){
         // given
-        departureModel.getDepartureEntries().clear();
-        DepartureEntry dp1 = departureModel.getNewDepartureEntry();
-        departureModel.getDepartureEntries().add(dp1);
         departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
-        departureModel.getSelectedDeparture().setTime24hFormat("04:20");
-        departureModel.getSelectedDeparture().setTime24hFormat("04:21");
-        departureModel.getSelectedDeparture().setTime24hFormat("04:22");
+        // Initial hat dieser 00:00
+        departureModel.getSelectedDeparture().setTime24hFormat("00:15");
+        departureModel.getSelectedDeparture().setTime24hFormat("00:30");
 
         // when
         departureModel.undo();
@@ -325,7 +336,7 @@ public class DepartureModelTest {
         departureModel.redo();
 
         // then
-        assertEquals("04:22", departureModel.getSelectedDeparture().getTime24hFormat());
+        assertEquals("00:30", departureModel.getSelectedDeparture().getTime24hFormat());
     }
 
     @After
