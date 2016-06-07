@@ -167,9 +167,8 @@ public class DepartureUI extends BorderPane {
         /* topPane Events */
         addNew.setOnAction(e -> {
             departurePM.addNewDepartureEntry();
-            // gleich nach unten scrollen und neue Selektion setzen
+            // gleich nach unten scrollen
             leftTableView.scrollTo(leftTableView.getItems().size()-1);
-            departurePM.setSelectedDeparture(leftTableView.getItems().get(leftTableView.getItems().size()-1));
         });
         removeSelected.setOnAction(e -> departurePM.removeDeparture());
         saveButton.setOnAction(e -> {
@@ -185,7 +184,6 @@ public class DepartureUI extends BorderPane {
     private void addValueChangeListeners(){
         /* leftVBox Listeners */
         leftTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> departurePM.setSelectedDeparture(newValue));
-        leftTableView.getSelectionModel().select(0); // Initial erste Zeile wählen (wegen der Validierung wichtig!)
 
         /* topPane Listeners */
         searchInput.textProperty().addListener((observable, oldValue, newValue) -> {

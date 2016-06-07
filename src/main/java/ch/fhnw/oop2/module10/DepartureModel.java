@@ -11,8 +11,6 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.control.TableView;
-
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -69,8 +67,8 @@ public class DepartureModel {
      * Constructor des Models
      */
     public DepartureModel(){
-        departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
         createProxyBindings();
+        departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
         setTotalAmountOfEntries(String.valueOf(departureEntries.size()));
         undoDisabled.bind(Bindings.isEmpty(undoStack));
         redoDisabled.bind(Bindings.isEmpty(redoStack));
@@ -522,14 +520,21 @@ public class DepartureModel {
         return selectedDeparture;
     }
 
+    /**
+     * Setzt eine neue Departure für SelectedDeparture, passt entsprechend Flags an und leer Stacks.
+     * @param selectedDeparture
+     */
     public void setSelectedDeparture(DepartureEntry selectedDeparture) {
-        // Flags setzten, weil nur Selektion erfolgt ist
+        // Flags setzen, weil nur Selektion erfolgt ist
         departureTimeSelectionOnly = true;
         toLocationSelectionOnly = true;
         trainNumberSelectionOnly = true;
         railNumberSelectionOnly = true;
         stopOverSelectionOnly = true;
         this.selectedDeparture.set(selectedDeparture);
+        // Stacks leeren
+        undoStack.clear();
+        redoStack.clear();
     }
 
     public HashMap<String, Integer> getFieldsWithErrors() {
