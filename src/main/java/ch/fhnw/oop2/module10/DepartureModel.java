@@ -181,7 +181,7 @@ public class DepartureModel {
         entry[3] = "Zürich HB";
         entry[4] = "Olten  00:00 - Aarau  00:08 - Zürich HB  00:33";
         entry[5] = "-1";
-        String state = "Neu";
+        String state = DepartureState.NEW.toString();
         DepartureEntry newDepartureEntry = new DepartureEntry(entry, state);
         return newDepartureEntry;
     }
@@ -444,10 +444,10 @@ public class DepartureModel {
     }
 
     /**
-     * Setzt das selektierte Departure als "geändert".
+     * Setzt das selektierte Departure als CHANGED.
      */
     public void markSelectedDepartureAsChanged(){
-        this.getSelectedDeparture().setIconColLED("Geändert");
+        this.getSelectedDeparture().setIconColLED(DepartureState.CHANGED.toString());
     }
 
     /**
