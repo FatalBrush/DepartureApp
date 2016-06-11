@@ -2,15 +2,15 @@ package ch.fhnw.oop2.module10;
 
 import com.sun.corba.se.impl.orbutil.graph.Node;
 import com.sun.deploy.util.StringUtils;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.control.TableView;
-
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -43,20 +43,35 @@ public class DepartureModel {
     private boolean stopOverSelectionOnly = true;
 
     private final ObservableList<DepartureEntry> departureEntries = FXCollections.observableArrayList(); // Für TableView verwendet
-    private final FilteredList<DepartureEntry> filteredDepartureEntries = new FilteredList<DepartureEntry>(departureEntries, p -> true);
-    private final SortedList<DepartureEntry> sortedDepartureEntries = new SortedList<DepartureEntry>(filteredDepartureEntries);
+    private final FilteredList<DepartureEntry> filteredDepartureEntries = new FilteredList<DepartureEntry>(departureEntries, p -> true); //Für die Suche
+    private final SortedList<DepartureEntry> sortedDepartureEntries = new SortedList<DepartureEntry>(filteredDepartureEntries); // Für die Suche
+    private final ObservableList<Command> undoStack = FXCollections.observableArrayList();
+    private final ObservableList<Command> redoStack = FXCollections.observableArrayList();
 
     private final ObjectProperty<DepartureEntry> selectedDeparture = new SimpleObjectProperty<>();
     private final HashMap<String, Integer> fieldsWithErrors = new HashMap<>();
     private final BooleanProperty contentNotSaveable = new SimpleBooleanProperty(); // False = Inhalt kann gespeichert werden
+    private final BooleanProperty undoDisabled = new SimpleBooleanProperty();
+    private final BooleanProperty redoDisabled = new SimpleBooleanProperty();
     private final DepartureEntry departureEntryProxy = new DepartureEntry();
     private final StringProperty totalAmountOfEntries = new SimpleStringProperty();
     private final StringProperty currentlyShownAmountOfEntries = new SimpleStringProperty();
 
+    private final ChangeListener propertyChangeListenerForUndoSupport = (observable, oldValue, newValue) -> {
+        redoStack.clear(); // Klassisches Verhalten von Redo, wenn erneut geändert wird
+        // Änderung zuoberst auf undoStack hinzufügen
+        undoStack.add(0, new ValueChangeCommand(DepartureModel.this, (Property) observable, oldValue, newValue));
+    };
+
+    /**
+     * Constructor des Models
+     */
     public DepartureModel(){
-        departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
         createProxyBindings();
+        departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
         setTotalAmountOfEntries(String.valueOf(departureEntries.size()));
+        undoDisabled.bind(Bindings.isEmpty(undoStack));
+        redoDisabled.bind(Bindings.isEmpty(redoStack));
     }
 
     /**
@@ -71,6 +86,7 @@ public class DepartureModel {
                 departureEntryProxy.trainNumberProperty().unbindBidirectional(oldValue.trainNumberProperty());
                 departureEntryProxy.railNumberProperty().unbindBidirectional(oldValue.railNumberProperty());
                 departureEntryProxy.stopOverStationsProperty().unbindBidirectional(oldValue.stopOverStationsProperty());
+                disableUndoSupport(oldValue);
             }
 
             // neue Bindings erstellen
@@ -80,8 +96,33 @@ public class DepartureModel {
                 departureEntryProxy.trainNumberProperty().bindBidirectional(newValue.trainNumberProperty());
                 departureEntryProxy.railNumberProperty().bindBidirectional(newValue.railNumberProperty());
                 departureEntryProxy.stopOverStationsProperty().bindBidirectional(newValue.stopOverStationsProperty());
+                enableUndoSupport(newValue);
             }
         });
+    }
+
+    /**
+     * Entfernt Listeners von einer DepartureEntry und somit den Undo-Support.
+     * @param departureEntry entsprechendes departure entry
+     */
+    private void disableUndoSupport(DepartureEntry departureEntry){
+        departureEntry.time24hFormatProperty().removeListener(propertyChangeListenerForUndoSupport);
+        departureEntry.destinationStationProperty().removeListener(propertyChangeListenerForUndoSupport);
+        departureEntry.trainNumberProperty().removeListener(propertyChangeListenerForUndoSupport);
+        departureEntry.railNumberProperty().removeListener(propertyChangeListenerForUndoSupport);
+        departureEntry.stopOverStationsProperty().removeListener(propertyChangeListenerForUndoSupport);
+    }
+
+    /**
+     * Fügt Listeners einer DepartureEntry hinzu und somit den Undo-Support.
+     * @param departureEntry entsprechendes departure entry
+     */
+    private void enableUndoSupport(DepartureEntry departureEntry){
+        departureEntry.time24hFormatProperty().addListener(propertyChangeListenerForUndoSupport);
+        departureEntry.destinationStationProperty().addListener(propertyChangeListenerForUndoSupport);
+        departureEntry.trainNumberProperty().addListener(propertyChangeListenerForUndoSupport);
+        departureEntry.railNumberProperty().addListener(propertyChangeListenerForUndoSupport);
+        departureEntry.stopOverStationsProperty().addListener(propertyChangeListenerForUndoSupport);
     }
 
     /**
@@ -140,7 +181,7 @@ public class DepartureModel {
         entry[3] = "Zürich HB";
         entry[4] = "Olten  00:00 - Aarau  00:08 - Zürich HB  00:33";
         entry[5] = "-1";
-        String state = "Neu";
+        String state = DepartureState.NEW.toString();
         DepartureEntry newDepartureEntry = new DepartureEntry(entry, state);
         return newDepartureEntry;
     }
@@ -151,6 +192,8 @@ public class DepartureModel {
     public void removeDeparture() {
         departureEntries.remove(getSelectedDeparture());
         setTotalAmountOfEntries(String.valueOf(departureEntries.size()));
+        undoStack.clear();
+        redoStack.clear();
     }
 
     /**
@@ -182,7 +225,6 @@ public class DepartureModel {
      * Speichert departureEntries in die Datei olten.csv
      */
     public void saveDepartureEntries() {
-        // TODO: Nach dem Speichern Icon mit Farbe links ändern... Zusatzfeature?
         try{
             BufferedWriter fileWriter = Files.newBufferedWriter(getCSVPath(FILE_NAME, LOCATED_IN_SAME_FOLDER));
             // erste Linie schreiben mit den Spalten
@@ -204,21 +246,11 @@ public class DepartureModel {
         // File neu einlesen um die Icons zu aktualisieren
         departureEntries.clear();
         departureEntries.addAll(readCSVDepartureFile(LOCATED_IN_SAME_FOLDER));
+        // Stacks löschen für Undo / Redo
+        undoStack.clear();
+        redoStack.clear();
     }
-
-
-    /**
-     * Ändert den Status des selektierten Eintrages auf rot weil Mutation gemacht wurde.
-     */
-    // TODO: Methode löschen?
-    /*
-    public void selectedDepartureEntryWasChanged(){
-        DepartureEntry tmp = getSelectedDeparture();
-        tmp.setIconColLED("Nicht gespeichert");
-        setSelectedDeparture(tmp);
-    }
-    */
-
+    
     /**
      * Validiert die Abfahrtszeit.
      * @param departureTime Abfahrtszeit welche in XX:YY Format sein sollte.
@@ -412,10 +444,53 @@ public class DepartureModel {
     }
 
     /**
-     * Setzt das selektierte Departure als "geändert".
+     * Setzt das selektierte Departure als CHANGED.
      */
     public void markSelectedDepartureAsChanged(){
-        this.getSelectedDeparture().setIconColLED("Geändert");
+        this.getSelectedDeparture().setIconColLED(DepartureState.CHANGED.toString());
+    }
+
+    /**
+     * Setzt eine Wertänderung eines Commands um und hebt hierfür zwischenzeitig die Listeners auf.
+     * @param property entsprechendes Property welches zu ändern ist.
+     * @param newValue Wert für dieses Property
+     * @param <T>
+     */
+    public <T> void setPropertyValueWithoutUndoSupport(Property<T> property, T newValue){
+        property.removeListener(propertyChangeListenerForUndoSupport);
+        property.setValue(newValue);
+        property.addListener(propertyChangeListenerForUndoSupport);
+    }
+
+
+    /**
+     * Holt Command aus undoStack und führt diesen aus.
+     */
+    public void undo(){
+        if(undoStack.isEmpty()){
+            return;
+        }
+
+        Command cmd = undoStack.get(0);
+        undoStack.remove(0);
+        redoStack.add(0, cmd);
+
+        cmd.undo();
+    }
+
+    /**
+     * Holt Command aus redoStack und führt diesen aus.
+     */
+    public void redo(){
+        if(redoStack.isEmpty()){
+            return;
+        }
+
+        Command cmd = redoStack.get(0);
+        redoStack.remove(0);
+        undoStack.add(0, cmd);
+
+        cmd.redo();
     }
 
     /**
@@ -445,14 +520,21 @@ public class DepartureModel {
         return selectedDeparture;
     }
 
+    /**
+     * Setzt eine neue Departure für SelectedDeparture, passt entsprechend Flags an und leer Stacks.
+     * @param selectedDeparture
+     */
     public void setSelectedDeparture(DepartureEntry selectedDeparture) {
-        // Flags setzten, weil nur Selektion erfolgt ist
+        // Flags setzen, weil nur Selektion erfolgt ist
         departureTimeSelectionOnly = true;
         toLocationSelectionOnly = true;
         trainNumberSelectionOnly = true;
         railNumberSelectionOnly = true;
         stopOverSelectionOnly = true;
         this.selectedDeparture.set(selectedDeparture);
+        // Stacks leeren
+        undoStack.clear();
+        redoStack.clear();
     }
 
     public HashMap<String, Integer> getFieldsWithErrors() {
@@ -553,5 +635,29 @@ public class DepartureModel {
 
     public void setStopOverSelectionOnly(boolean stopOverSelectionOnly) {
         this.stopOverSelectionOnly = stopOverSelectionOnly;
+    }
+
+    public boolean getUndoDisabled() {
+        return undoDisabled.get();
+    }
+
+    public BooleanProperty undoDisabledProperty() {
+        return undoDisabled;
+    }
+
+    public void setUndoDisabled(boolean undoDisabled) {
+        this.undoDisabled.set(undoDisabled);
+    }
+
+    public boolean getRedoDisabled() {
+        return redoDisabled.get();
+    }
+
+    public BooleanProperty redoDisabledProperty() {
+        return redoDisabled;
+    }
+
+    public void setRedoDisabled(boolean redoDisabled) {
+        this.redoDisabled.set(redoDisabled);
     }
 }

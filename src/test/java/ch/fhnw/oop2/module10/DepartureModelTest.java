@@ -9,6 +9,7 @@ import static junit.framework.Assert.*;
  */
 public class DepartureModelTest {
     private DepartureModel departureModel;
+
     @Before
     public void setUp(){
         departureModel = new DepartureModel();
@@ -20,20 +21,14 @@ public class DepartureModelTest {
     @Test
     public void testTotalAmountOfEntries(){
         // given
-        departureModel.getDepartureEntries().clear();
+        // olten.csv mit 11 Einträgen
 
         // when
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        // selektiere ersten Eintrag...
         departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
-        departureModel.removeDeparture(); // lösche diesen..
-        departureModel.addNewDepartureEntry();
+        departureModel.removeDeparture();
 
         // then
-        assertEquals("4", departureModel.getTotalAmountOfEntries());
+        assertEquals("10", departureModel.getTotalAmountOfEntries());
     }
 
     /**
@@ -280,8 +275,66 @@ public class DepartureModelTest {
         // Alle Einträge sind 11 in der Anzahl
     }
 
+    /**
+     * Testet ob mehrfache Undos korrekt ausgeführt werden
+     */
+    @Test
+    public void testMultipleUndo(){
+        // given
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        // Initial hat dieser 00:00
+        departureModel.getSelectedDeparture().setTime24hFormat("00:15");
+        departureModel.getSelectedDeparture().setTime24hFormat("00:30");
+
+        // when
+        departureModel.undo();
+        departureModel.undo();
+
+        // then
+        assertEquals("00:00", departureModel.getSelectedDeparture().getTime24hFormat());
+
+    }
+
+    /**
+     * Testet ob ein einfaches Undo korrekt ausgeführt wird
+     */
+    @Test
+    public void testSingleUndo(){
+        // given
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        // Initial hat dieser IC 747
+        departureModel.getSelectedDeparture().setTrainNumber("IC 7474");
+
+        // when
+        departureModel.undo();
+
+        // then
+        assertEquals("IC 747", departureModel.getSelectedDeparture().getTrainNumber());
+    }
+
+    /**
+     * Testet ob mehrfache Redos korrekt ausgeführt werden
+     */
+    @Test
+    public void testMultipleRedo(){
+        // given
+        departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
+        // Initial hat dieser 00:00
+        departureModel.getSelectedDeparture().setTime24hFormat("00:15");
+        departureModel.getSelectedDeparture().setTime24hFormat("00:30");
+
+        // when
+        departureModel.undo();
+        departureModel.undo();
+        departureModel.redo();
+        departureModel.redo();
+
+        // then
+        assertEquals("00:30", departureModel.getSelectedDeparture().getTime24hFormat());
+    }
+
     @After
     public void cleanUp(){
-
+        departureModel.getDepartureEntries().clear();
     }
 }

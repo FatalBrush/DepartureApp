@@ -23,7 +23,7 @@ public class DepartureEntry {
      * @param entry Array mit einzelnen Werten für einen Eintrag.
      */
     public DepartureEntry(String[] entry){
-        this(entry, "Gespeichert");
+        this(entry, DepartureState.SAVED.toString());
     }
 
     /**
