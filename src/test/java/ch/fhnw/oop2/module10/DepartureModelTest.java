@@ -21,20 +21,14 @@ public class DepartureModelTest {
     @Test
     public void testTotalAmountOfEntries(){
         // given
-        departureModel.getDepartureEntries().clear();
+        // olten.csv mit 11 Einträgen
 
         // when
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        departureModel.addNewDepartureEntry();
-        // selektiere ersten Eintrag...
         departureModel.setSelectedDeparture(departureModel.getDepartureEntries().get(0));
-        departureModel.removeDeparture(); // lösche diesen..
-        departureModel.addNewDepartureEntry();
+        departureModel.removeDeparture();
 
         // then
-        assertEquals("4", departureModel.getTotalAmountOfEntries());
+        assertEquals("10", departureModel.getTotalAmountOfEntries());
     }
 
     /**
